@@ -8,7 +8,7 @@ export default class HamTruyen extends Connector {
         super.id = 'hamtruyen';
         super.label = 'HamTruyen';
         this.tags = [ 'manga', 'webtoon', 'vietnamese' ];
-        this.url = 'https://hamtruyen.vn';
+        this.url = 'http://truyentranh8.org/';
     }
 
     async _getMangaFromURI(uri) {
@@ -29,8 +29,8 @@ export default class HamTruyen extends Connector {
     }
 
     async _getMangasFromPage(page) {
-        let request = new Request(new URL(`/danhsach/P${page}/index.html`, this.url), this.requestOptions);
-        let data = await this.fetchDOM(request, 'ul.listtruyen li div.item_truyennendoc > a');
+        let request = new Request(new URL(`/search.php?act=all&andor=and&sort=ten&view=thumb&page=${page}`, this.url), this.requestOptions);
+        let data = await this.fetchDOM(request, 'div#tblChap.row:not([class*=" "]) h3 a');
         return data.map(element => {
             return {
                 id: this.getRootRelativeOrAbsoluteLink(element, this.url),
@@ -41,11 +41,11 @@ export default class HamTruyen extends Connector {
 
     async _getChapters(manga) {
         let request = new Request(new URL(manga.id, this.url), this.requestOptions);
-        let data = await this.fetchDOM(request, 'div.content div.col_chap:first-of-type a');
+        let data = await this.fetchDOM(request, 'ul#ChapList.mangadetail-chaplist:not([class*=" "]) li a');
         return data.map(element => {
             return {
                 id: this.getRootRelativeOrAbsoluteLink(element, this.url),
-                title: element.text.trim(),
+                title: element.children && element.children[0] && element.children[0].textContent || element.text.trim(),
                 language: ''
             };
         });
@@ -53,7 +53,7 @@ export default class HamTruyen extends Connector {
 
     async _getPages(chapter) {
         let request = new Request(new URL(chapter.id, this.url), this.requestOptions);
-        let data = await this.fetchDOM(request, 'div.content_chap source');
-        return data.map(element => this.getAbsolutePath(element, request.url));
+        let data = await this.fetchDOM(request, '.page-chapter source');
+        return data.map(element => this.getAbsolutePath(element.src, request.url));
     }
 }
